@@ -14,6 +14,12 @@ import com.example.kotlinplayground.user.MainActivityViewModel
 import com.example.kotlinplayground.user.MainActivityViewModelFactory
 import com.example.kotlinplayground.user.UIEventManager
 import kotlinx.android.synthetic.main.activity_main.*
+import android.view.Menu
+import android.view.MenuItem
+import androidx.navigation.NavController
+import androidx.navigation.Navigation
+import androidx.navigation.ui.NavigationUI
+
 
 class MainActivity : AppCompatActivity(), UIEventManager {
 
@@ -23,23 +29,13 @@ class MainActivity : AppCompatActivity(), UIEventManager {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        bottomNav.setOnNavigationItemSelectedListener {
-            when (it.itemId) {
-                R.id.menu_home -> {
-                    setContent("Home")
-                    true
-                }
-                R.id.menu_profile -> {
-                    setContent("Profile")
-                    true
-                }
-                R.id.menu_search -> {
-                    setContent("Menu")
-                    true
-                }
-                else -> false
-            }
-        }
+        setSupportActionBar(toolbar)
+
+        val navController = Navigation.findNavController(this, R.id.nav_host_fragment)
+
+        setupBottomNavMenu(navController)
+        setupSideNavigationMenu(navController)
+        setupActionBar(navController)
 
         val viewModelFactory = MainActivityViewModelFactory(this)
         viewModel = ViewModelProvider(this, viewModelFactory).get(MainActivityViewModel::class.java)
@@ -85,5 +81,36 @@ class MainActivity : AppCompatActivity(), UIEventManager {
     private fun setContent(content: String) {
         setTitle(content)
         tvLabel.text = content
+    }
+
+    private fun setupBottomNavMenu(navController: NavController) {
+        bottom_nav?.let {
+            NavigationUI.setupWithNavController(it, navController)
+        }
+    }
+
+    private fun setupSideNavigationMenu(navController: NavController) {
+        nav_view?.let {
+            NavigationUI.setupWithNavController(it, navController)
+        }
+    }
+
+    private fun setupActionBar(navController: NavController) {
+        NavigationUI.setupActionBarWithNavController(this, navController, drawer_layout)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_toolbar, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        val navController = Navigation.findNavController(this, R.id.nav_host_fragment)
+        val navigated = NavigationUI.onNavDestinationSelected(item!!, navController)
+        return navigated || super.onOptionsItemSelected(item)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        return NavigationUI.navigateUp(Navigation.findNavController(this, R.id.nav_host_fragment),drawer_layout)
     }
 }

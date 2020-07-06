@@ -6,7 +6,6 @@ apply plugin: 'androidx.navigation.safeargs'
 
 android {
     compileSdkVersion 29
-
     defaultConfig {
         applicationId "com.example.kotlinplayground"
         minSdkVersion 16
@@ -23,6 +22,26 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    buildFeatures {
+        dataBinding = true
+        // for view binding :
+        // viewBinding = true
+    }
+
+    //groovy
+    configurations.all {
+        resolutionStrategy.force "org.antlr:antlr4-runtime:4.7.1"
+        resolutionStrategy.force "org.antlr:antlr4-tool:4.7.1"
+    }
+
+//kotlin DSL
+    configurations.all {
+        resolutionStrategy {
+            force("org.antlr:antlr4-runtime:4.7.1")
+            force("org.antlr:antlr4-tool:4.7.1")
+        }
+    }
 }
 
 dependencies {
@@ -35,6 +54,7 @@ dependencies {
     implementation 'android.arch.navigation:navigation-fragment-ktx:1.0.0-alpha05'
     implementation 'android.arch.navigation:navigation-ui-ktx:1.0.0-alpha05'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
     //test
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
@@ -52,7 +72,10 @@ dependencies {
     implementation 'com.squareup.retrofit2:retrofit:2.6.1'
     implementation 'com.squareup.retrofit2:converter-gson:2.6.1'
     //room
-    implementation "androidx.room:room-runtime:2.2.3"
-    implementation "androidx.room:room-ktx:2.2.3"
-    kapt "androidx.room:room-compiler:2.2.3"
+    //Android Room
+    implementation "androidx.room:room-runtime:2.2.5"
+    implementation "androidx.room:room-ktx:2.2.5"
+    kapt "androidx.room:room-compiler:2.2.5"
+
+    kapt 'com.android.databinding:compiler:3.1.4'
 }

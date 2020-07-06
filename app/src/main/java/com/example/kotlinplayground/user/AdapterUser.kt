@@ -13,6 +13,11 @@ class AdapterUser(private val list: List<NewArrivals>) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.content_item, null)
+        val lp = RecyclerView.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        view.layoutParams = lp
         return ViewHolder(view)
     }
 

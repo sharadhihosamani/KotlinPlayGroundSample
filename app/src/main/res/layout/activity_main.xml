@@ -12,61 +12,11 @@
         android:background="?colorPrimary"
         android:theme="@style/ToolbarTheme" />
 
-    <TextView
-        android:id="@+id/tvLabel"
-        android:layout_below="@id/toolbar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_marginTop="@dimen/dimen_20"
-        android:text="Home"
-        android:visibility="gone"
-        android:textColor="#4a4a4a"
-        android:textSize="18sp" />
-
-    <ProgressBar
-        android:layout_below="@id/tvLabel"
-        android:id="@+id/progress_bar"
-        android:layout_width="match_parent"
-        android:layout_marginTop="@dimen/dimen_20"
-        android:visibility="gone"
-        android:layout_height="@dimen/dimen_20" />
-
-    <LinearLayout
-        android:id="@+id/buttons"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/dimen_50"
-        android:layout_below="@id/progress_bar"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn_clear"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="clear data" />
-
-        <Button
-            android:id="@+id/btn_load_data"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="load data" />
-    </LinearLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewMain"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/buttons"
-        android:layout_marginTop="@dimen/dimen_20"
-        android:visibility="gone"/>
-
     <fragment
         android:id="@+id/nav_host_fragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/buttons"
+        android:layout_below="@id/toolbar"
         android:name="androidx.navigation.fragment.NavHostFragment"
         app:navGraph="@navigation/mobile_navigation"
         app:defaultNavHost="true" />

@@ -6,9 +6,51 @@
     tools:context=".view.HomeFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Home" />
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Home" />
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="match_parent"
+            android:layout_marginTop="@dimen/dimen_20"
+            android:layout_height="@dimen/dimen_20"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:layout_marginTop="@dimen/dimen_20"
+            android:id="@+id/buttons"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/dimen_50"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_clear"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="clear data" />
+
+            <Button
+                android:id="@+id/btn_load_data"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="load data" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMain"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/buttons"
+            android:layout_marginTop="@dimen/dimen_20" />
+    </LinearLayout>
 
 </FrameLayout>

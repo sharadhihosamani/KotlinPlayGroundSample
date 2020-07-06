@@ -6,7 +6,7 @@ import com.example.kotlinplayground.repository.AppRepository
 import kotlinx.coroutines.delay
 import java.io.IOException
 
-class MainActivityViewModel(private val eventManager: UIEventManager) : ViewModel() {
+class HomeViewModel(private val eventManager: UIEventManager) : ViewModel() {
     private val repository = AppRepository()
 
     fun loadDataFromWeb() = liveData {
@@ -17,9 +17,9 @@ class MainActivityViewModel(private val eventManager: UIEventManager) : ViewMode
             eventManager.hideProgressBar()
             eventManager.showToast("Loaded")
             emit(receivedData)
-//        } catch (e: IOException) {
-//            eventManager.showToast("IOException")
-//            eventManager.hideProgressBar()
+        } catch (e: IOException) {
+            eventManager.showToast("IOException")
+            eventManager.hideProgressBar()
         } catch (e: Exception) {
             println(e.message)
             eventManager.showToast("Exception")

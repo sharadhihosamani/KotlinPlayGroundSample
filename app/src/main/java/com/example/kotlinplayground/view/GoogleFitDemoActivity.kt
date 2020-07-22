@@ -11,12 +11,11 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.kotlinplayground.R
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.fitness.Fitness
+import com.google.android.gms.fitness.FitnessActivities
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.*
 import com.google.android.gms.fitness.data.HealthDataTypes.TYPE_BLOOD_PRESSURE
-import com.google.android.gms.fitness.request.DataDeleteRequest
 import com.google.android.gms.fitness.request.DataReadRequest
-import com.google.android.gms.fitness.request.DataUpdateRequest
 import com.google.android.gms.fitness.request.SessionReadRequest
 import com.google.android.gms.fitness.result.DataReadResponse
 import com.google.android.gms.fitness.result.SessionReadResponse
@@ -53,6 +52,8 @@ class GoogleFitDemoActivity : AppCompatActivity() {
             .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
             .addDataType(TYPE_BLOOD_PRESSURE, FitnessOptions.ACCESS_READ)
             .addDataType(HealthDataTypes.AGGREGATE_BLOOD_PRESSURE_SUMMARY, FitnessOptions.ACCESS_READ)
+            .addDataType(DataType.TYPE_DISTANCE_DELTA)
+            .addDataType(DataType.AGGREGATE_DISTANCE_DELTA)
             .build()
        }
 
@@ -133,6 +134,109 @@ class GoogleFitDemoActivity : AppCompatActivity() {
      * Asynchronous task to read the history data. When the task succeeds, it will print out the
      * data.
      */
+
+    private fun readWorkOutFitnessData(): Task<DataReadResponse> {
+        // Begin by creating the query.
+        val readRequest = queryFitnessSessionData()
+
+        // Invoke the History API to fetch the data with the query
+        return Fitness.getHistoryClient(this, getGoogleAccount())
+            .readData(readRequest)
+            .addOnSuccessListener { dataReadResponse ->
+                // For the sake of the sample, we'll print the data so we can see what we just
+                // added. In general, logging fitness information should be avoided for privacy
+                // reasons.
+                val bucketList: List<Bucket> = dataReadResponse.buckets
+//                for (bucket in bucketList) {
+//                    for (ds in bucket.dataSets) {
+//                        for (dp in ds.dataPoints) {
+//                            Log.i(TAG, "Data point:")
+//                            Log.i(TAG, "\tType: ${dp.dataType.name}")
+//                            Log.i(TAG, "\tStart: ${dp.getStartTimeString()}")
+//                            Log.i(TAG, "\tEnd: ${dp.getEndTimeString()}")
+//                            var tempDesc = ""
+//                            dp.dataType.fields.forEach {
+//                                Log.i(TAG, "\tField: ${it.name} Value: ${dp.getValue(it)}")
+//                                tempDesc += "\tField: ${it.name} Value: ${dp.getValue(it)}"
+//                            }
+//                        }
+//                    }
+
+                var returnValue: String? = ""
+
+                if (dataReadResponse.buckets.size > 0) {
+                    for (i in 0 until dataReadResponse.buckets.size) {
+                        returnValue += ("\n\n$i ---new bucket-- activity: " + dataReadResponse.buckets[i].activity + "\n"
+                              + "~")
+                        for (j in 0 until dataReadResponse.buckets[i].dataSets.size) {
+                            returnValue += "\n-data set $j-package: " + dataReadResponse.buckets[i].dataSets[j].dataSource
+                                .appPackageName + ", stream: " + dataReadResponse.buckets[i].dataSets[j].dataSource.streamIdentifier
+                            returnValue += handleDailyRecordInDataSet(
+                                dataReadResponse.buckets[i].dataSets[j]
+                            )
+                        }
+                    }
+                }
+            }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "There was a problem reading the data.", e)
+                    }
+    }
+
+    private fun handleDailyRecordInDataSet(dataSet: DataSet): String? {
+        var returnValue = ""
+        for (dataPoint in dataSet.dataPoints) {
+
+            //var activityName= dataPoint.getValue(Field.FIELD_ACTIVITY)
+           // var activityyCalorie = dataPoint.getValue(Field.FIELD_CALORIES)
+
+            val startTime =
+                dataPoint.getStartTime(TimeUnit.MILLISECONDS)
+            val endTime =
+                dataPoint.getEndTime(TimeUnit.MILLISECONDS)
+            var tempValue =
+                "DataPoint start: " + startTime
+                    .toString() + ", end=" + endTime
+                    .toString() + ", type=" + dataPoint.dataType.name
+                    .toString() + ",  package=" + dataPoint.dataSource.appPackageName
+                    .toString() + ", stream=" + dataPoint.dataSource.streamIdentifier
+            if (dataPoint.dataSource.device != null) {
+                tempValue += "\nManufacturer=" + dataPoint.dataSource.device!!
+                    .manufacturer.toString() + ", model=" + dataPoint.dataSource
+                    .device!!.model
+                    .toString() + ", uid: " + dataPoint.dataSource.device!!.uid
+                    .toString() + ", type=" + dataPoint.dataSource.device!!.type
+            }
+            tempValue += "\norigin source: package=" + dataPoint.originalDataSource
+                .appPackageName.toString() + ", stream=" + dataPoint.originalDataSource
+                .streamIdentifier
+            if (dataPoint.originalDataSource.device != null) {
+                tempValue += "\nManufacturer=" + dataPoint.originalDataSource.device!!
+                    .manufacturer.toString() + ", model=" + dataPoint.originalDataSource
+                    .device!!.model
+                    .toString() + ", uid: " + dataPoint.originalDataSource.device!!.uid
+                    .toString() + ", type=" + dataPoint.originalDataSource.device!!
+                    .type
+            }
+            returnValue += """
+                
+                
+                $tempValue
+                """.trimIndent()
+            for (field in dataPoint.dataType.fields) {
+                val fieldValue =
+                    "Field name: " + field.name.toString() + ", value: " + dataPoint.getValue(
+                        field
+                    )
+                returnValue += """
+                    
+                    $fieldValue
+                    """.trimIndent()
+            }
+        }
+        return returnValue
+    }
+
     private fun readWorkOutData(): Task<SessionReadResponse> {
         val readRequest = queryWorkOutData()
         return Fitness.getSessionsClient(
@@ -164,11 +268,13 @@ class GoogleFitDemoActivity : AppCompatActivity() {
     }
 
     private fun dumpSession(session: Session) {
-        txt_work_out_value.text= "Data returned for Session: " + session.name +
+        var concatText=   txt_work_out_value.text
+       var act= session.activity
+        txt_work_out_value.text =  "Data returned for Session: " + session.name +
                 "\n\tDescription: " +
                 session.description + "\n\tStart: " +
                 session.getStartTimeString()+ "\n\tEnd: " +
-                session.getEndTimeString()
+                session.getEndTimeString() + concatText
 
         Log.i(TAG, "Data returned for Session: " + session.name
                 + "\n\tDescription: " + session.description
@@ -185,16 +291,38 @@ class GoogleFitDemoActivity : AppCompatActivity() {
         val now = Date()
         cal.time = now
         val endTime = cal.timeInMillis
-        cal.add(Calendar.WEEK_OF_YEAR, -1)
+        cal.add(Calendar.WEEK_OF_YEAR, -3)
         val startTime = cal.timeInMillis
 
-// Build a session read request
-
-// Build a session read request
         return SessionReadRequest.Builder()
             .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-            //.read(DataType.TYPE_CALORIES_EXPENDED)
+            .read(DataType.TYPE_CALORIES_EXPENDED)
+            .read(DataType.TYPE_SPEED)
+            .read(DataType.TYPE_DISTANCE_DELTA)
             .readSessionsFromAllApps()
+            .build()
+    }
+
+    private fun queryFitnessSessionData() : DataReadRequest {
+        // [START build_read_data_request]
+        // Setting a start and end date using a range of 1 week before this moment.
+        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        val now = Date()
+        calendar.time = now
+        val endTime = calendar.timeInMillis
+        calendar.add(Calendar.DAY_OF_YEAR, -1)
+        val startTime = calendar.timeInMillis
+
+        Log.i(TAG, "Range Start: ${dateFormat.format(startTime)}")
+        Log.i(TAG, "Range End: ${dateFormat.format(endTime)}")
+
+        return DataReadRequest.Builder()
+            .aggregate(DataType.TYPE_CALORIES_EXPENDED, DataType.AGGREGATE_CALORIES_EXPENDED)
+            .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+            .read(DataType.TYPE_ACTIVITY_SEGMENT)
+            .bucketByActivitySegment( 1, TimeUnit.MINUTES)
+            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+            .enableServerQueries()
             .build()
     }
     /** Returns a [DataReadRequest] for all step count changes in the past week.  */
@@ -223,6 +351,7 @@ class GoogleFitDemoActivity : AppCompatActivity() {
             // bucketing by "sessions", which would need to be defined in code.
             .bucketByTime(1, TimeUnit.DAYS)
             .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+
             .build()
     }
 
@@ -294,64 +423,6 @@ class GoogleFitDemoActivity : AppCompatActivity() {
     private fun getGoogleAccount() = GoogleSignIn.getAccountForExtension(this, fitnessOptions)
 
     /**
-     * Inserts and reads data by chaining {@link Task} from {@link #insertData()} and {@link
-     * #readHistoryData()}.
-     */
-    private fun insertAndReadData() = insertData().continueWith { readHistoryData() }
-
-    /** Creates a {@link DataSet} and inserts it into user's Google Fit history. */
-    private fun insertData(): Task<Void> {
-        // Create a new dataset and insertion request.
-        val dataSet = insertFitnessData()
-
-        // Then, invoke the History API to insert the data.
-        Log.i(TAG, "Inserting the dataset in the History API.")
-        return Fitness.getHistoryClient(this, getGoogleAccount())
-            .insertData(dataSet)
-            .addOnSuccessListener { Log.i(TAG, "Data insert was successful!") }
-            .addOnFailureListener { exception ->
-                Log.e(TAG, "There was a problem inserting the dataset.", exception)
-            }
-    }
-
-
-
-    /**
-     * Creates and returns a {@link DataSet} of step count data for insertion using the History API.
-     */
-    private fun insertFitnessData(): DataSet {
-        Log.i(TAG, "Creating a new data insert request.")
-
-        // [START build_insert_data_request]
-        // Set a start and end time for our data, using a start time of 1 hour before this moment.
-        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-        val now = Date()
-        calendar.time = now
-        val endTime = calendar.timeInMillis
-        calendar.add(Calendar.HOUR_OF_DAY, -1)
-        val startTime = calendar.timeInMillis
-
-        // Create a data source
-        val dataSource = DataSource.Builder()
-            .setAppPackageName(this)
-            .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-            .setStreamName("$TAG - step count")
-            .setType(DataSource.TYPE_RAW)
-            .build()
-
-        // Create a data set
-        val stepCountDelta = 950
-        return DataSet.builder(dataSource)
-            .add(DataPoint.builder(dataSource)
-                .setField(Field.FIELD_STEPS, stepCountDelta)
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-                .build()
-            ).build()
-        // [END build_insert_data_request]
-    }
-
-
-    /**
      * Logs a record of the query result. It's possible to get more constrained data sets by
      * specifying a data source or data type, but for demonstrative purposes here's how one would
      * dump all the data. In this sample, logging also prints to the device screen, so we can see
@@ -401,107 +472,7 @@ class GoogleFitDemoActivity : AppCompatActivity() {
             }
         }
     }
-    // [END parse_dataset]
 
-    /**
-     * Deletes a [DataSet] from the History API. In this example, we delete all step count data
-     * for the past 24 hours.
-     */
-    private fun deleteData() {
-        Log.i(TAG, "Deleting today's step count data.")
-
-        // [START delete_dataset]
-        // Set a start and end time for our data, using a start time of 1 day before this moment.
-        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-        val now = Date()
-        calendar.time = now
-        val endTime = calendar.timeInMillis
-        calendar.add(Calendar.DAY_OF_YEAR, -1)
-        val startTime = calendar.timeInMillis
-
-        //  Create a delete request object, providing a data type and a time interval
-        val request = DataDeleteRequest.Builder()
-            .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-            .addDataType(DataType.TYPE_STEP_COUNT_DELTA)
-            .build()
-
-        // Invoke the History API with the HistoryClient object and delete request, and then
-        // specify a callback that will check the result.
-        Fitness.getHistoryClient(this, getGoogleAccount())
-            .deleteData(request)
-            .addOnSuccessListener {
-                Log.i(TAG, "Successfully deleted today's step count data.")
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to delete today's step count data.", e)
-            }
-    }
-
-    /**
-     * Updates and reads data by chaining [Task] from [.updateData] and [ ][.readHistoryData].
-     */
-    private fun updateAndReadData() = updateData().continueWithTask { readHistoryData() }
-
-    /**
-     * Creates a [DataSet],then makes a [DataUpdateRequest] to update step data. Then
-     * invokes the History API with the HistoryClient object and update request.
-     */
-    private fun updateData(): Task<Void> {
-        // Create a new dataset and update request.
-        val dataSet = updateFitnessData()
-        val startTime = dataSet.dataPoints[0].getStartTime(TimeUnit.MILLISECONDS)
-        val endTime = dataSet.dataPoints[0].getEndTime(TimeUnit.MILLISECONDS)
-        // [START update_data_request]
-        Log.i(TAG, "Updating the dataset in the History API.")
-
-        val request = DataUpdateRequest.Builder()
-            .setDataSet(dataSet)
-            .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-            .build()
-
-        // Invoke the History API to update data.
-        return Fitness.getHistoryClient(this, getGoogleAccount())
-            .updateData(request)
-            .addOnSuccessListener { Log.i(TAG, "Data update was successful.") }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "There was a problem updating the dataset.", e)
-            }
-    }
-
-    /** Creates and returns a {@link DataSet} of step count data to update. */
-    private fun updateFitnessData(): DataSet {
-        Log.i(TAG, "Creating a new data update request.")
-
-        // [START build_update_data_request]
-        // Set a start and end time for the data that fits within the time range
-        // of the original insertion.
-        val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-        val now = Date()
-        calendar.time = now
-        val endTime = calendar.timeInMillis
-        calendar.add(Calendar.MINUTE, -50)
-        val startTime = calendar.timeInMillis
-
-        // Create a data source
-        val dataSource = DataSource.Builder()
-            .setAppPackageName(this)
-            .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-            .setStreamName("$TAG - step count")
-            .setType(DataSource.TYPE_RAW)
-            .build()
-
-        // Create a data set
-        val stepCountDelta = 1000
-        // For each data point, specify a start time, end time, and the data value -- in this case,
-        // the number of new steps.
-        return DataSet.builder(dataSource)
-            .add(DataPoint.builder(dataSource)
-                .setField(Field.FIELD_STEPS, stepCountDelta)
-                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
-                .build()
-            ).build()
-        // [END build_update_data_request]
-    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
